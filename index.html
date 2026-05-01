@@ -40,7 +40,7 @@
         #logRapido { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 50px; display: none; }
         
         /* Estilo da tela de consulta via QR Code */
-        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; }
+        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:20px; box-sizing:border-box; text-align:center; overflow-y: auto; }
         .loading { font-size: 20px; color: #666; margin-top: 50px; }
     </style>
 </head>
@@ -49,16 +49,25 @@
 
 <!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
-    <h1 id="resNome">Aguardando dados da nuvem...</h1>
-    <div style="font-size: 80px; margin: 20px 0;" id="iconeCorrida">⏳</div>
-    <div class="card" id="cardResultado" style="display:none;">
-        <p>Número: <strong id="resPeito">--</strong></p>
-        <p>Idade: <strong id="resIdade">--</strong></p>
-        <p>Tempo Oficial: <strong id="resTempo" style="font-size: 24px; color: var(--success);">--</strong></p>
-        <p>Colocação Geral: <strong id="resGeral">--</strong></p>
-        <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
+    <div style="background: var(--primary); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h2 id="resNomeEvento" style="margin: 0; font-size: 22px; text-transform: uppercase;">Carregando Evento...</h2>
+        <p id="resDataEvento" style="margin: 5px 0 0 0; font-size: 14px; color: #bdc3c7;"></p>
     </div>
-    <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px;">Página do Evento</button>
+
+    <h1 id="resNome">Aguardando dados...</h1>
+    <div style="font-size: 80px; margin: 15px 0;" id="iconeCorrida">⏳</div>
+    
+    <div class="card" id="cardResultado" style="display:none; text-align: left;">
+        <p style="font-size: 18px;">Número: <strong id="resPeito">--</strong></p>
+        <p style="font-size: 18px;">Idade: <strong id="resIdade">--</strong> anos</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        <p style="font-size: 20px; text-align: center;">Tempo Oficial<br> <strong id="resTempo" style="font-size: 32px; color: var(--success);">--</strong></p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        <p style="font-size: 18px;">Colocação Geral: <strong id="resGeral">--</strong></p>
+        <p style="font-size: 18px;">Colocação Categoria: <strong id="resCatPos">--</strong></p>
+    </div>
+    
+    <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px; width: 100%;">Voltar ao Início</button>
 </div>
 
 <!-- SISTEMA PRINCIPAL -->
@@ -76,12 +85,13 @@
     <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
-            <h2>Configuração</h2>
+            <h2>Configuração da Prova</h2>
             <input id="nomeEvento" placeholder="Nome da Corrida">
+            <input id="dataEvento" type="date" placeholder="Data da Corrida">
             <div class="btn-group">
                 <button class="action btn-success" onclick="salvarConfigEvento()">Atualizar na Nuvem</button>
             </div>
-            <p style="color: green; font-size: 14px;">✓ Conectado ao Firebase Online</p>
+            <p style="color: green; font-size: 14px; margin-top: 15px;">✓ Conectado ao Firebase Online</p>
         </div>
     </div>
 
@@ -164,7 +174,7 @@
     // Variáveis Globais
     let atletas = [];
     let tempos = [];
-    let config = { nome: "Magnetic Estúdio" };
+    let config = { nome: "Magnetic Estúdio", data: "" };
     const ANO_ATUAL = new Date().getFullYear();
 
     let tempoInicio = null;
@@ -172,6 +182,14 @@
     let rodando = false;
     let peitoConsulta = null;
     let isConsultaMode = false;
+
+    // Função auxiliar para formatar a data (AAAA-MM-DD para DD/MM/AAAA)
+    function formatarDataBR(dataISO) {
+        if(!dataISO) return "Data não informada";
+        const partes = dataISO.split('-');
+        if(partes.length !== 3) return dataISO;
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
 
     // ==========================================
     // 2. SINCRONIZAÇÃO EM TEMPO REAL (NUVEM)
@@ -186,24 +204,31 @@
             document.getElementById("consultaAtleta").style.display = "block";
         }
 
-        // Fica ouvindo os Atletas na nuvem
+        // Ouvindo os Atletas na nuvem
         db.ref('atletas').on('value', snap => {
             atletas = snap.val() ? Object.values(snap.val()) : [];
             if(!isConsultaMode) atualizarTabelaAtletas();
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Fica ouvindo os Tempos na nuvem
+        // Ouvindo os Tempos na nuvem
         db.ref('tempos').on('value', snap => {
             tempos = snap.val() ? Object.values(snap.val()) : [];
             if(!isConsultaMode) atualizarRanking();
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Fica ouvindo as Configurações na nuvem
+        // Ouvindo as Configurações na nuvem
         db.ref('config').on('value', snap => {
-            config = snap.val() || { nome: "Magnetic Estúdio" };
-            if(!isConsultaMode) document.getElementById("tituloEventoExibicao").innerText = config.nome;
+            config = snap.val() || { nome: "Magnetic Estúdio", data: "" };
+            
+            if(!isConsultaMode) {
+                document.getElementById("tituloEventoExibicao").innerText = config.nome;
+                document.getElementById("nomeEvento").value = config.nome || "";
+                document.getElementById("dataEvento").value = config.data || "";
+            } else {
+                tentarExibirResultado();
+            }
         });
         
         // Atalho Enter
@@ -217,8 +242,9 @@
     // ==========================================
     function salvarConfigEvento() {
         config.nome = document.getElementById("nomeEvento").value || config.nome;
+        config.data = document.getElementById("dataEvento").value || config.data;
         db.ref('config').set(config);
-        showToast("Salvo na nuvem!");
+        showToast("Evento salvo na nuvem!");
     }
 
     function salvarAtleta() {
@@ -229,7 +255,7 @@
         atletas = atletas.filter(a => a.peito !== p);
         atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value.toUpperCase() });
         
-        db.ref('atletas').set(atletas); // Salva na Nuvem
+        db.ref('atletas').set(atletas);
         document.querySelectorAll('#cadastro input').forEach(i => i.value = "");
         openTab('dadosAtletas');
         showToast("Atleta Salvo!");
@@ -252,7 +278,7 @@
         if(tempos.find(x=>x.peito===p)) return alert("Tempo já registrado!");
         
         tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
-        db.ref('tempos').set(tempos); // Salva na Nuvem imediatamente
+        db.ref('tempos').set(tempos);
         
         document.getElementById("chegadaPeito").value = "";
         showToast(`Peito ${p} registrado!`);
@@ -269,6 +295,10 @@
     // 4. LÓGICA DO QR CODE E EXIBIÇÃO ONLINE
     // ==========================================
     function tentarExibirResultado() {
+        // Atualiza cabeçalho com dados do evento
+        document.getElementById("resNomeEvento").innerText = config.nome || "Evento sem nome";
+        document.getElementById("resDataEvento").innerText = formatarDataBR(config.data);
+
         const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).sort((a,b)=>a.tempo-b.tempo);
         const index = rGeral.findIndex(x => x.peito === peitoConsulta);
         const atleta = rGeral[index];
@@ -301,7 +331,6 @@
             const a = atletas[i];
             if (i > 0) doc.addPage([30, 30]);
 
-            // Link do seu GitHub
             const urlBase = window.location.href.split('?')[0];
             const linkConsulta = `${urlBase}?p=${a.peito}`;
 
