@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAGNETIC ESTÚDIO - Cronometragem Online</title>
+
+    <!-- Bibliotecas Necessárias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2c3e50; --secondary: #34495e; --accent: #3498db;
+            --success: #27ae60; --danger: #e74c3c; --light: #f5f6fa;
+        }
+        body { font-family: 'Segoe UI', sans-serif; margin:0; background: var(--light); }
+        .header { text-align:center; padding:20px; background: var(--primary); color:white; font-weight:bold; }
+        .tabs { display:flex; background: var(--secondary); overflow-x: auto; sticky: top; position: sticky; top: 0; z-index: 100; }
+        .tabs button { flex:1; padding:15px; color:white; background:none; border:none; cursor:pointer; font-weight:bold; white-space: nowrap; }
+        .tabs button.active-tab { border-bottom: 3px solid var(--accent); background: var(--primary); }
+        .tab { display:none; padding:20px; }
+        .active { display:block; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background:white; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); margin-bottom:20px; }
+        input, select { display:block; margin:10px 0; padding:12px; width:100%; box-sizing: border-box; border-radius:6px; border:1px solid #ccc; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+        button.action { padding:12px 20px; border:none; border-radius:6px; background: var(--accent); color:white; cursor:pointer; font-weight: bold; }
+        .btn-danger { background: var(--danger) !important; }
+        .btn-success { background: var(--success) !important; }
+        table { width:100%; border-collapse: collapse; background:white; }
+        th, td { border:1px solid #eee; padding:12px; text-align:center; }
+        th { background: var(--primary); color:white; }
+        .cronometro-container { background: #222; color: #00ff00; padding: 30px; border-radius: 15px; text-align: center; font-size: 60px; font-family: monospace; }
+        #logRapido { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 50px; display: none; }
+        
+        /* Estilo da tela de consulta via QR Code */
+        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; }
+    </style>
+</head>
+
+<body>
+
+<!-- Tela de Visualização do QR Code (Resultado Individual) -->
+<div id="consultaAtleta">
+    <h1 id="resNome">Atleta</h1>
+    <div style="font-size: 80px; margin: 20px 0;">🏃</div>
+    <div class="card">
+        <p>Número: <strong id="resPeito">--</strong></p>
+        <p>Tempo: <strong id="resTempo">--</strong></p>
+        <p>Colocação Geral: <strong id="resGeral">--</strong></p>
+        <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
+    </div>
+    <button class="action" onclick="window.location.href = window.location.pathname">Voltar ao Início</button>
+</div>
+
+<div class="header" id="tituloEventoExibicao">MAGNETIC ESTÚDIO - GESTÃO ONLINE</div>
+
+<div class="tabs" id="mainTabs">
+    <button onclick="openTab('evento')" id="btn-evento">Evento</button>
+    <button onclick="openTab('cadastro')" id="btn-cadastro">Cadastro</button>
+    <button onclick="openTab('dadosAtletas')" id="btn-dadosAtletas">Atletas</button>
+    <button onclick="openTab('controle')" id="btn-controle">Cronômetro</button>
+    <button onclick="openTab('telao')" id="btn-telao">Ranking</button>
+</div>
+
+<div class="container" id="mainContainer">
+    <!-- EVENTO -->
+    <div id="evento" class="tab active">
+        <div class="card">
+            <h2>Configuração</h2>
+            <input id="nomeEvento" placeholder="Nome da Corrida">
+            <div class="btn-group">
+                <button class="action btn-success" onclick="salvarConfigEvento()">Salvar Nome</button>
+                <button class="action" onclick="exportarDados()">Exportar JSON</button>
+            </div>
+            <label>Importar Backup:</label>
+            <input type="file" accept=".json" onchange="importarDados(event)">
+        </div>
+    </div>
+
+    <!-- CADASTRO -->
+    <div id="cadastro" class="tab">
+        <div class="card">
+            <h2>Novo Atleta</h2>
+            <input id="peito" type="number" placeholder="Nº Peito">
+            <input id="nome" placeholder="Nome Completo">
+            <input id="nasc" type="number" placeholder="Ano Nascimento">
+            <select id="genero"><option>Masculino</option><option>Feminino</option></select>
+            <input id="categoria" placeholder="Categoria (ex: 5KM)">
+            <button class="action btn-success" onclick="salvarAtleta()">Salvar Atleta</button>
+        </div>
+    </div>
+
+    <!-- LISTA ATLETAS -->
+    <div id="dadosAtletas" class="tab">
+        <div class="card">
+            <h2>Atletas e Etiquetas</h2>
+            <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (3x3cm)</button>
+            <table style="margin-top:20px">
+                <thead><tr><th>Peito</th><th>Nome</th><th>Ações</th></tr></thead>
+                <tbody id="tabelaAtletas"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CRONÔMETRO -->
+    <div id="controle" class="tab">
+        <div class="card" style="text-align: center;">
+            <div class="cronometro-container" id="cronometro">00:00:00.00</div>
+            <div class="btn-group" style="justify-content: center; margin-top:20px">
+                <button id="btnStart" class="action btn-success" onclick="iniciarCronometro()">INICIAR</button>
+                <button class="action btn-danger" onclick="resetarCronometro()">RESET</button>
+            </div>
+            <input id="chegadaPeito" type="number" placeholder="Nº Peito" style="font-size:30px; text-align:center; margin-top:30px">
+            <button class="action btn-success" style="width:100%" onclick="registrarChegada()">REGISTRAR CHEGADA</button>
+        </div>
+    </div>
+
+    <!-- RANKING -->
+    <div id="telao" class="tab">
+        <div class="card">
+            <h2>Resultados</h2>
+            <div class="btn-group">
+                <button class="action btn-success" onclick="gerarRelatorioPDF()">Baixar PDF</button>
+                <button class="action btn-danger" onclick="limparTudo()">ZERAR TUDO</button>
+            </div>
+            <table>
+                <thead><tr><th>Pos</th><th>Peito</th><th>Nome</th><th>Tempo</th></tr></thead>
+                <tbody id="rankingCorpo"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="logRapido"></div>
+<div id="qrcodeHidden" style="display:none"></div>
+
+<script>
+    let atletas = JSON.parse(localStorage.getItem("atletas")) || [];
+    let tempos = JSON.parse(localStorage.getItem("tempos")) || [];
+    let config = JSON.parse(localStorage.getItem("config_evento")) || { nome: "Magnetic Estúdio" };
+    let tempoInicio = null, intervaloCronometro = null, rodando = false;
+
+    window.onload = () => {
+        // Lógica de consulta online via QR CODE
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('p')) {
+            exibirResultadoIndividual(urlParams.get('p'));
+            return;
+        }
+
+        document.getElementById("tituloEventoExibicao").innerText = config.nome;
+        atualizarTabelaAtletas();
+        atualizarRanking();
+    };
+
+    function openTab(id) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active-tab'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-' + id).classList.add('active-tab');
+    }
+
+    function salvarAtleta() {
+        const p = document.getElementById("peito").value;
+        const n = document.getElementById("nome").value;
+        if(!p || !n) return alert("Peito e Nome obrigatórios!");
+        atletas = atletas.filter(a => a.peito !== p);
+        atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value.toUpperCase() });
+        localStorage.setItem("atletas", JSON.stringify(atletas));
+        atualizarTabelaAtletas();
+        openTab('dadosAtletas');
+    }
+
+    function atualizarTabelaAtletas() {
+        const corpo = document.getElementById("tabelaAtletas");
+        corpo.innerHTML = "";
+        atletas.sort((a,b)=>a.peito-b.peito).forEach(a => {
+            corpo.innerHTML += `<tr><td>${a.peito}</td><td>${a.nome}</td><td><button class="action btn-danger" onclick="excluirAtleta('${a.peito}')">Excluir</button></td></tr>`;
+        });
+    }
+
+    // --- LÓGICA DO QR CODE ---
+    async function gerarEtiquetasPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'mm', format: [30, 30] }); // Cada página é uma etiqueta de 3x3cm
+
+        for (let i = 0; i < atletas.length; i++) {
+            const a = atletas[i];
+            if (i > 0) doc.addPage([30, 30]);
+
+            // Gerar link de consulta (Seu site online)
+            const urlBase = window.location.href.split('?')[0];
+            const linkConsulta = `${urlBase}?p=${a.peito}`;
+
+            // Gerar imagem do QR Code
+            document.getElementById("qrcodeHidden").innerHTML = "";
+            new QRCode(document.getElementById("qrcodeHidden"), { text: linkConsulta, width: 100, height: 100 });
+
+            // Aguardar renderização
+            await new Promise(r => setTimeout(r, 100));
+            const qrImg = document.querySelector("#qrcodeHidden img").src;
+
+            doc.addImage(qrImg, 'PNG', 5, 2, 20, 20);
+            doc.setFontSize(10);
+            doc.text(`${a.peito}`, 15, 26, { align: "center" });
+        }
+        doc.save("etiquetas_3x3.pdf");
+    }
+
+    function exibirResultadoIndividual(peito) {
+        document.getElementById("mainTabs").style.display = "none";
+        document.getElementById("mainContainer").style.display = "none";
+        document.getElementById("consultaAtleta").style.display = "block";
+
+        const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).sort((a,b)=>a.tempo-b.tempo);
+        const index = rGeral.findIndex(x => x.peito === peito);
+        const atleta = rGeral[index];
+
+        if(!atleta) {
+            document.getElementById("resNome").innerText = "Resultado ainda não disponível";
+            return;
+        }
+
+        const rCat = rGeral.filter(x => x.categoria === atleta.categoria);
+        const indexCat = rCat.findIndex(x => x.peito === peito);
+
+        document.getElementById("resNome").innerText = atleta.nome;
+        document.getElementById("resPeito").innerText = atleta.peito;
+        document.getElementById("resTempo").innerText = formatarTempo(atleta.tempo);
+        document.getElementById("resGeral").innerText = `${index + 1}º Lugar`;
+        document.getElementById("resCatPos").innerText = `${indexCat + 1}º Lugar (${atleta.categoria})`;
+    }
+
+    // --- FUNÇÕES DE TEMPO ---
+    function iniciarCronometro() {
+        if(rodando) return;
+        tempoInicio = Date.now();
+        intervaloCronometro = setInterval(() => {
+            document.getElementById("cronometro").innerText = formatarTempo((Date.now() - tempoInicio)/1000);
+        }, 30);
+        rodando = true;
+    }
+
+    function formatarTempo(sTotal) {
+        const h = Math.floor(sTotal / 3600);
+        const m = Math.floor((sTotal % 3600) / 60);
+        const s = Math.floor(sTotal % 60);
+        const ms = Math.floor((sTotal % 1) * 100);
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${ms.toString().padStart(2,'0')}`;
+    }
+
+    function registrarChegada() {
+        const p = document.getElementById("chegadaPeito").value;
+        if(!rodando) return alert("Inicie o cronômetro!");
+        if(!atletas.find(x=>x.peito===p)) return alert("Atleta não existe!");
+        if(tempos.find(x=>x.peito===p)) return alert("Já registrado!");
+        
+        tempos.push({ peito: p, tempo: (Date.now()-tempoInicio)/1000 });
+        localStorage.setItem("tempos", JSON.stringify(tempos));
+        document.getElementById("chegadaPeito").value = "";
+        atualizarRanking();
+        showToast("Registrado!");
+    }
+
+    function atualizarRanking() {
+        const corpo = document.getElementById("rankingCorpo");
+        corpo.innerHTML = "";
+        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)}))
+                             .sort((a,b)=>a.tempo-b.tempo);
+        rankings.forEach((r, i) => {
+            corpo.innerHTML += `<tr><td>${i+1}º</td><td>${r.peito}</td><td>${r.nome}</td><td>${formatarTempo(r.tempo)}</td></tr>`;
+        });
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById("logRapido");
+        t.innerText = msg; t.style.display = "block";
+        setTimeout(()=>t.style.display="none", 2000);
+    }
+
+    function limparTudo() { if(confirm("Apagar TUDO?")) { localStorage.clear(); location.reload(); } }
+</script>
+</body>
+</html>
