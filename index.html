@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAGNETIC ESTÚDIO - Cronometragem Online</title>
 
+    <!-- Bibliotecas de PDF e QR Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+    <!-- FIREBASE (O coração da Nuvem) -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
@@ -50,6 +52,7 @@
 
 <body>
 
+<!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
     <div class="header" id="tituloEventoConsulta" style="border-radius: 8px; margin-bottom: 20px; font-size: 18px; padding: 15px;">CARREGANDO EVENTO...</div>
 
@@ -60,14 +63,17 @@
         <p>Idade: <strong id="resIdade">--</strong></p>
         <p>Tempo Oficial: <strong id="resTempo" style="font-size: 24px; color: var(--success);">--</strong></p>
         <p>Colocação Geral: <strong id="resGeral">--</strong></p>
-        <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
+        <!-- TEXTO ATUALIZADO PARA REFLETIR CATEGORIA E GÊNERO -->
+        <p>Colocação Categoria/Gênero: <strong id="resCatPos">--</strong></p>
     </div>
 
+    <!-- RODAPÉ -->
     <div style="margin-top: 40px; font-size: 12px; color: #7f8c8d; font-weight: bold; letter-spacing: 1px;">
         PROGRAMA DESENVOLVIDO POR JUVENCIO JR
     </div>
 </div>
 
+<!-- SISTEMA PRINCIPAL -->
 <div class="header" id="tituloEventoExibicao">MAGNETIC ESTÚDIO - CONECTANDO À NUVEM...</div>
 
 <div class="tabs" id="mainTabs">
@@ -79,6 +85,7 @@
 </div>
 
 <div class="container" id="mainContainer">
+    <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
             <h2>Configuração do Evento</h2>
@@ -102,6 +109,7 @@
         </div>
     </div>
 
+    <!-- CADASTRO -->
     <div id="cadastro" class="tab">
         <div class="card">
             <h2>Cadastrar / Editar Atleta</h2>
@@ -120,6 +128,7 @@
         </div>
     </div>
 
+    <!-- LISTA ATLETAS -->
     <div id="dadosAtletas" class="tab">
         <div class="card">
             <h2>Atletas e Etiquetas</h2>
@@ -142,6 +151,7 @@
         </div>
     </div>
 
+    <!-- CRONÔMETRO -->
     <div id="controle" class="tab">
         <div class="card" style="text-align: center;">
             <div class="cronometro-container" id="cronometro">00:00:00.00</div>
@@ -154,10 +164,12 @@
         </div>
     </div>
 
+    <!-- RANKING COM FILTROS -->
     <div id="telao" class="tab">
         <div class="card">
             <h2>Resultados Ao Vivo</h2>
             
+            <!-- NOVOS FILTROS -->
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <select id="filtroGeneroRanking" onchange="atualizarRanking()" style="margin: 0; flex: 1;">
                     <option value="TODOS">Todos os Gêneros</option>
@@ -166,7 +178,8 @@
                 </select>
                 <select id="filtroCategoriaRanking" onchange="atualizarRanking()" style="margin: 0; flex: 1;">
                     <option value="TODOS">Todas as Categorias</option>
-                    </select>
+                    <!-- Preenchido automaticamente via JS -->
+                </select>
             </div>
 
             <div class="btn-group">
@@ -245,7 +258,6 @@
             if (data) {
                 config.nome = data.nome || "Magnetic Estúdio";
                 
-                // CORREÇÃO: Força a conversão correta mesmo se o Firebase transformar o Array em Objeto
                 if (data.categorias) {
                     config.categorias = Array.isArray(data.categorias) ? data.categorias : Object.values(data.categorias);
                 } else {
@@ -309,7 +321,6 @@
             selectCat.innerHTML += `<option value="${cat}">${cat}</option>`;
         });
 
-        // Atualiza o Filtro da tela de Ranking
         const selectFiltroCat = document.getElementById("filtroCategoriaRanking");
         if(selectFiltroCat) {
             const valorAtual = selectFiltroCat.value;
@@ -332,7 +343,6 @@
         const n = document.getElementById("nome").value;
         if(!p || !n) return alert("Peito e Nome obrigatórios!");
         
-        // Remove o atleta antigo se for uma edição, e adiciona o novo (atualizado)
         atletas = atletas.filter(a => String(a.peito) !== String(p));
         atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value });
         
@@ -343,25 +353,21 @@
         showToast("Atleta Salvo!");
     }
 
-    // NOVA FUNÇÃO: EDITAR ATLETA
     function editarAtleta(p) {
         const atleta = atletas.find(a => String(a.peito) === String(p));
         if(!atleta) return;
 
-        // Preenche os campos do formulário na aba de cadastro
         document.getElementById("peito").value = atleta.peito;
         document.getElementById("nome").value = atleta.nome;
         document.getElementById("nasc").value = atleta.nasc || '';
         document.getElementById("genero").value = atleta.genero || 'Masculino';
         
-        // Atualiza a categoria se existir no sistema
         if(config.categorias.includes(atleta.categoria)) {
             document.getElementById("categoria").value = atleta.categoria;
         } else {
             document.getElementById("categoria").value = 'GERAL';
         }
 
-        // Abre a aba de cadastro
         openTab('cadastro');
         showToast("Editando atleta... Salve ao finalizar.");
     }
@@ -417,9 +423,13 @@
         document.getElementById("resPeito").innerText = atletaCadastrado.peito;
         document.getElementById("resIdade").innerText = ANO_ATUAL - parseInt(atletaCadastrado.nasc || ANO_ATUAL);
 
+        // LÓGICA DE CONTAGEM: CATEGORIA E GÊNERO COMBINADOS
         const catDoAtleta = atletaCadastrado.categoria || 'Geral';
+        const genDoAtleta = atletaCadastrado.genero || 'Masculino';
         const totalInscritosGeral = atletas.length;
-        const totalInscritosCat = atletas.filter(a => (a.categoria || 'Geral') === catDoAtleta).length;
+        
+        // Filtra os inscritos que possuem a mesma categoria E o mesmo gênero
+        const totalInscritosCatGen = atletas.filter(a => (a.categoria || 'Geral') === catDoAtleta && (a.genero || 'Masculino') === genDoAtleta).length;
 
         if(index === -1) {
             document.getElementById("resNome").innerText = "Olá, " + atletaCadastrado.nome + "!";
@@ -427,21 +437,24 @@
             document.getElementById("resTempo").innerText = "Em percurso...";
             document.getElementById("resTempo").style.color = "#f39c12";
             document.getElementById("resGeral").innerText = `-- / ${totalInscritosGeral} Inscritos`;
-            document.getElementById("resCatPos").innerText = `-- / ${totalInscritosCat} Inscritos (${catDoAtleta})`;
+            document.getElementById("resCatPos").innerText = `-- / ${totalInscritosCatGen} Inscritos (${catDoAtleta} - ${genDoAtleta})`;
             return;
         }
 
         const atleta = rGeral[index];
-        const rCat = rGeral.filter(x => x.categoria === atleta.categoria);
-        const indexCat = rCat.findIndex(x => String(x.peito) === String(peitoConsulta));
+        
+        // Filtra a posição apenas entre os que cruzaram a linha na mesma categoria E gênero
+        const rCatGen = rGeral.filter(x => x.categoria === atleta.categoria && x.genero === atleta.genero);
+        const indexCatGen = rCatGen.findIndex(x => String(x.peito) === String(peitoConsulta));
 
         document.getElementById("resNome").innerText = "Parabéns, " + atleta.nome + "!";
         document.getElementById("iconeCorrida").innerText = "🏅";
         document.getElementById("resTempo").innerText = formatarTempo(atleta.tempo);
         document.getElementById("resTempo").style.color = "var(--success)";
         
+        // EXIBE AS POSIÇÕES ATUALIZADAS
         document.getElementById("resGeral").innerText = `${index + 1}º Lugar / ${totalInscritosGeral} Inscritos`;
-        document.getElementById("resCatPos").innerText = `${indexCat + 1}º Lugar / ${totalInscritosCat} Inscritos (${catDoAtleta})`;
+        document.getElementById("resCatPos").innerText = `${indexCatGen + 1}º Lugar / ${totalInscritosCatGen} Inscritos (${catDoAtleta} - ${genDoAtleta})`;
     }
 
     async function gerarEtiquetasPDF() {
@@ -615,7 +628,6 @@
         if(id === 'controle') setTimeout(() => document.getElementById('chegadaPeito').focus(), 200);
     }
 
-    // ATUALIZADA: AGORA MOSTRA GÊNERO E CATEGORIA, ALÉM DO BOTÃO DE EDITAR
     function atualizarTabelaAtletas() {
         const corpo = document.getElementById("tabelaAtletas");
         corpo.innerHTML = "";
