@@ -21,7 +21,7 @@
         }
         body { font-family: 'Segoe UI', sans-serif; margin:0; background: var(--light); }
         .header { text-align:center; padding:20px; background: var(--primary); color:white; font-weight:bold; }
-        .tabs { display:flex; background: var(--secondary); overflow-x: auto; position: sticky; top: 0; z-index: 100; }
+        .tabs { display:flex; background: var(--secondary); overflow-x: auto; sticky: top; position: sticky; top: 0; z-index: 100; }
         .tabs button { flex:1; padding:15px; color:white; background:none; border:none; cursor:pointer; font-weight:bold; white-space: nowrap; }
         .tabs button.active-tab { border-bottom: 3px solid var(--accent); background: var(--primary); }
         .tab { display:none; padding:20px; }
@@ -40,7 +40,7 @@
         #logRapido { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 50px; display: none; }
         
         /* Estilo da tela de consulta via QR Code */
-        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:20px; box-sizing:border-box; text-align:center; overflow-y: auto; }
+        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; }
         .loading { font-size: 20px; color: #666; margin-top: 50px; }
     </style>
 </head>
@@ -49,32 +49,23 @@
 
 <!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
-    <div style="background: var(--primary); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-        <h2 id="resNomeEvento" style="margin: 0; font-size: 22px; text-transform: uppercase;">Carregando Evento...</h2>
-        <p id="resDataEvento" style="margin: 5px 0 0 0; font-size: 14px; color: #bdc3c7;"></p>
+    <h1 id="resNome">Aguardando dados da nuvem...</h1>
+    <div style="font-size: 80px; margin: 20px 0;" id="iconeCorrida">⏳</div>
+    <div class="card" id="cardResultado" style="display:none;">
+        <p>Número: <strong id="resPeito">--</strong></p>
+        <p>Idade: <strong id="resIdade">--</strong></p>
+        <p>Tempo Oficial: <strong id="resTempo" style="font-size: 24px; color: var(--success);">--</strong></p>
+        <p>Colocação Geral: <strong id="resGeral">--</strong></p>
+        <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
     </div>
-
-    <h1 id="resNome">Aguardando dados...</h1>
-    <div style="font-size: 80px; margin: 15px 0;" id="iconeCorrida">⏳</div>
-    
-    <div class="card" id="cardResultado" style="display:none; text-align: left;">
-        <p style="font-size: 18px;">Número: <strong id="resPeito">--</strong></p>
-        <p style="font-size: 18px;">Idade: <strong id="resIdade">--</strong> anos</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-        <p style="font-size: 20px; text-align: center;">Tempo Oficial<br> <strong id="resTempo" style="font-size: 32px; color: var(--success);">--</strong></p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-        <p style="font-size: 18px;">Colocação Geral: <strong id="resGeral">--</strong></p>
-        <p style="font-size: 18px;">Colocação Categoria: <strong id="resCatPos">--</strong></p>
-    </div>
-    
-    <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px; width: 100%;">Voltar ao Início</button>
+    <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px;">Página do Evento</button>
 </div>
 
 <!-- SISTEMA PRINCIPAL -->
 <div class="header" id="tituloEventoExibicao">MAGNETIC ESTÚDIO - CONECTANDO À NUVEM...</div>
 
 <div class="tabs" id="mainTabs">
-    <button onclick="openTab('evento')" id="btn-evento" class="active-tab">Evento</button>
+    <button onclick="openTab('evento')" id="btn-evento">Evento</button>
     <button onclick="openTab('cadastro')" id="btn-cadastro">Cadastro</button>
     <button onclick="openTab('dadosAtletas')" id="btn-dadosAtletas">Atletas</button>
     <button onclick="openTab('controle')" id="btn-controle">Cronômetro</button>
@@ -85,13 +76,12 @@
     <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
-            <h2>Configuração da Prova</h2>
+            <h2>Configuração</h2>
             <input id="nomeEvento" placeholder="Nome da Corrida">
-            <input id="dataEvento" type="date" placeholder="Data da Corrida">
             <div class="btn-group">
                 <button class="action btn-success" onclick="salvarConfigEvento()">Atualizar na Nuvem</button>
             </div>
-            <p style="color: green; font-size: 14px; margin-top: 15px;">✓ Conectado ao Firebase Online</p>
+            <p style="color: green; font-size: 14px;">✓ Conectado ao Firebase Online</p>
         </div>
     </div>
 
@@ -112,15 +102,9 @@
     <div id="dadosAtletas" class="tab">
         <div class="card">
             <h2>Atletas e Etiquetas</h2>
-            
-            <div class="btn-group">
-                <button class="action btn-success" onclick="gerarEtiquetasPDF()">Gerar QR Code (3x3)</button>
-                <button class="action" onclick="mudarOrdemAtletas('peito')">Ordenar por Número</button>
-                <button class="action" onclick="mudarOrdemAtletas('nome')">Ordenar por Nome</button>
-            </div>
-
+            <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (3x3cm)</button>
             <table style="margin-top:20px">
-                <thead><tr><th>Peito</th><th>Nome</th><th>Categoria</th><th>Ações</th></tr></thead>
+                <thead><tr><th>Peito</th><th>Nome</th><th>Ações</th></tr></thead>
                 <tbody id="tabelaAtletas"></tbody>
             </table>
         </div>
@@ -143,23 +127,12 @@
     <div id="telao" class="tab">
         <div class="card">
             <h2>Resultados Ao Vivo</h2>
-            
             <div class="btn-group">
-                <button class="action btn-success" onclick="gerarRelatorioPDF()">PDF Geral</button>
-                <button class="action btn-success" onclick="gerarRelatorioCategoriaPDF()">PDF por Categoria</button>
-                <button class="action btn-danger" onclick="limparTudo()">Apagar Nuvem (Zerar)</button>
+                <button class="action btn-success" onclick="gerarRelatorioPDF()">Baixar PDF</button>
+                <button class="action btn-danger" onclick="limparTudo()">APAGAR NUVEM (ZERAR)</button>
             </div>
-
-            <!-- Filtro de Categorias -->
-            <div style="margin: 15px 0;">
-                <label style="font-weight: bold;">Filtrar Ranking:</label>
-                <select id="filtroCategoria" onchange="mudarFiltroRanking()" style="display:inline-block; width:auto; margin-left:10px;">
-                    <option value="GERAL">Classificação Geral</option>
-                </select>
-            </div>
-
             <table>
-                <thead><tr><th>Pos</th><th>Peito</th><th>Nome</th><th>Categoria</th><th>Tempo</th></tr></thead>
+                <thead><tr><th>Pos</th><th>Peito</th><th>Nome</th><th>Tempo</th></tr></thead>
                 <tbody id="rankingCorpo"></tbody>
             </table>
         </div>
@@ -171,17 +144,18 @@
 
 <script>
     // ==========================================
-    // 1. CONFIGURAÇÃO FIREBASE
+    // 1. COLE AQUI O SEU FIREBASE CONFIG
     // ==========================================
-    const firebaseConfig = {
-      apiKey: "AIzaSyDaatMa_9wTLUHnliuAMZOiqsIUIDifYuU",
-      authDomain: "controle-de-corrida.firebaseapp.com",
-      databaseURL: "https://controle-de-corrida-default-rtdb.firebaseio.com",
-      projectId: "controle-de-corrida",
-      storageBucket: "controle-de-corrida.firebasestorage.app",
-      messagingSenderId: "992333777090",
-      appId: "1:992333777090:web:c6571afa0c36d01ec8135b"
-    };
+   const firebaseConfig = {
+  apiKey: "AIzaSyDrp7qLQwaig65fYQJXWXmfomJ_YcZHWIM",
+  authDomain: "corrida-paz.firebaseapp.com",
+  projectId: "corrida-paz",
+  storageBucket: "corrida-paz.firebasestorage.app",
+  messagingSenderId: "531285595198",
+  appId: "1:531285595198:web:c2ef7e918ecbc861c82d6f",
+  measurementId: "G-KZ1QMKYELH"
+};
+
 
     // Inicializa o Firebase
     firebase.initializeApp(firebaseConfig);
@@ -190,7 +164,7 @@
     // Variáveis Globais
     let atletas = [];
     let tempos = [];
-    let config = { nome: "Magnetic Estúdio", data: "" };
+    let config = { nome: "Magnetic Estúdio" };
     const ANO_ATUAL = new Date().getFullYear();
 
     let tempoInicio = null;
@@ -198,17 +172,6 @@
     let rodando = false;
     let peitoConsulta = null;
     let isConsultaMode = false;
-    
-    // Novas variáveis globais
-    let ordemAtletas = 'peito'; // Padrão
-    let filtroCategoriaRanking = 'GERAL'; // Padrão
-
-    function formatarDataBR(dataISO) {
-        if(!dataISO) return "Data não informada";
-        const partes = dataISO.split('-');
-        if(partes.length !== 3) return dataISO;
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
-    }
 
     // ==========================================
     // 2. SINCRONIZAÇÃO EM TEMPO REAL (NUVEM)
@@ -223,49 +186,39 @@
             document.getElementById("consultaAtleta").style.display = "block";
         }
 
-        // Ouvindo Atletas
+        // Fica ouvindo os Atletas na nuvem
         db.ref('atletas').on('value', snap => {
             atletas = snap.val() ? Object.values(snap.val()) : [];
-            if(!isConsultaMode) {
-                atualizarTabelaAtletas();
-                atualizarFiltroCategorias(); // Atualiza select categorias
-            }
+            if(!isConsultaMode) atualizarTabelaAtletas();
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Ouvindo Tempos
+        // Fica ouvindo os Tempos na nuvem
         db.ref('tempos').on('value', snap => {
             tempos = snap.val() ? Object.values(snap.val()) : [];
             if(!isConsultaMode) atualizarRanking();
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Ouvindo Configurações
+        // Fica ouvindo as Configurações na nuvem
         db.ref('config').on('value', snap => {
-            config = snap.val() || { nome: "Magnetic Estúdio", data: "" };
-            if(!isConsultaMode) {
-                document.getElementById("tituloEventoExibicao").innerText = config.nome;
-                document.getElementById("nomeEvento").value = config.nome || "";
-                document.getElementById("dataEvento").value = config.data || "";
-            } else {
-                tentarExibirResultado();
-            }
+            config = snap.val() || { nome: "Magnetic Estúdio" };
+            if(!isConsultaMode) document.getElementById("tituloEventoExibicao").innerText = config.nome;
         });
         
-        // Atalho Enter para chegada
+        // Atalho Enter
         document.addEventListener('keypress', (e) => {
             if(e.key === 'Enter' && document.activeElement.id === 'chegadaPeito') registrarChegada();
         });
     };
 
     // ==========================================
-    // 3. FUNÇÕES DE GRAVAÇÃO
+    // 3. FUNÇÕES DE GRAVAÇÃO (ENVIAR PRA NUVEM)
     // ==========================================
     function salvarConfigEvento() {
         config.nome = document.getElementById("nomeEvento").value || config.nome;
-        config.data = document.getElementById("dataEvento").value || config.data;
         db.ref('config').set(config);
-        showToast("Evento salvo na nuvem!");
+        showToast("Salvo na nuvem!");
     }
 
     function salvarAtleta() {
@@ -274,15 +227,9 @@
         if(!p || !n) return alert("Peito e Nome obrigatórios!");
         
         atletas = atletas.filter(a => a.peito !== p);
-        atletas.push({ 
-            peito: p, 
-            nome: n, 
-            nasc: document.getElementById("nasc").value, 
-            genero: document.getElementById("genero").value, 
-            categoria: document.getElementById("categoria").value.toUpperCase() 
-        });
+        atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value.toUpperCase() });
         
-        db.ref('atletas').set(atletas);
+        db.ref('atletas').set(atletas); // Salva na Nuvem
         document.querySelectorAll('#cadastro input').forEach(i => i.value = "");
         openTab('dadosAtletas');
         showToast("Atleta Salvo!");
@@ -305,7 +252,7 @@
         if(tempos.find(x=>x.peito===p)) return alert("Tempo já registrado!");
         
         tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
-        db.ref('tempos').set(tempos);
+        db.ref('tempos').set(tempos); // Salva na Nuvem imediatamente
         
         document.getElementById("chegadaPeito").value = "";
         showToast(`Peito ${p} registrado!`);
@@ -322,9 +269,6 @@
     // 4. LÓGICA DO QR CODE E EXIBIÇÃO ONLINE
     // ==========================================
     function tentarExibirResultado() {
-        document.getElementById("resNomeEvento").innerText = config.nome || "Evento sem nome";
-        document.getElementById("resDataEvento").innerText = formatarDataBR(config.data);
-
         const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).sort((a,b)=>a.tempo-b.tempo);
         const index = rGeral.findIndex(x => x.peito === peitoConsulta);
         const atleta = rGeral[index];
@@ -357,6 +301,7 @@
             const a = atletas[i];
             if (i > 0) doc.addPage([30, 30]);
 
+            // Link do seu GitHub
             const urlBase = window.location.href.split('?')[0];
             const linkConsulta = `${urlBase}?p=${a.peito}`;
 
@@ -374,37 +319,7 @@
     }
 
     // ==========================================
-    // 5. ORDENAÇÃO E FILTRAGEM (NOVAS FUNÇÕES)
-    // ==========================================
-    function mudarOrdemAtletas(ordem) {
-        ordemAtletas = ordem;
-        atualizarTabelaAtletas();
-        showToast(`Ordenando por ${ordem}`);
-    }
-
-    function atualizarFiltroCategorias() {
-        const select = document.getElementById("filtroCategoria");
-        const atual = select.value; 
-        
-        const categoriasUnicas = [...new Set(atletas.map(a => a.categoria).filter(c => c))].sort();
-        
-        select.innerHTML = '<option value="GERAL">Classificação Geral</option>';
-        categoriasUnicas.forEach(cat => {
-            select.innerHTML += `<option value="${cat}">Categoria: ${cat}</option>`;
-        });
-        
-        if (categoriasUnicas.includes(atual) || atual === 'GERAL') {
-            select.value = atual;
-        }
-    }
-
-    function mudarFiltroRanking() {
-        filtroCategoriaRanking = document.getElementById("filtroCategoria").value;
-        atualizarRanking();
-    }
-
-    // ==========================================
-    // 6. ATUALIZAÇÃO DE INTERFACE
+    // 5. UTILITÁRIOS E INTERFACE
     // ==========================================
     function openTab(id) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -417,44 +332,17 @@
     function atualizarTabelaAtletas() {
         const corpo = document.getElementById("tabelaAtletas");
         corpo.innerHTML = "";
-        
-        let lista = [...atletas];
-        if(ordemAtletas === 'peito') {
-            lista.sort((a,b) => parseInt(a.peito) - parseInt(b.peito));
-        } else {
-            lista.sort((a,b) => a.nome.localeCompare(b.nome));
-        }
-
-        lista.forEach(a => {
-            corpo.innerHTML += `<tr>
-                <td>${a.peito}</td>
-                <td>${a.nome}</td>
-                <td>${a.categoria || '-'}</td>
-                <td><button class="action btn-danger" onclick="excluirAtleta('${a.peito}')">Excluir</button></td>
-            </tr>`;
+        atletas.sort((a,b)=>a.peito-b.peito).forEach(a => {
+            corpo.innerHTML += `<tr><td>${a.peito}</td><td>${a.nome}</td><td><button class="action btn-danger" onclick="excluirAtleta('${a.peito}')">Excluir</button></td></tr>`;
         });
     }
 
     function atualizarRanking() {
         const corpo = document.getElementById("rankingCorpo");
         corpo.innerHTML = "";
-        
-        let rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)}))
-                             .filter(r => r.nome)
-                             .sort((a,b) => a.tempo - b.tempo);
-        
-        if(filtroCategoriaRanking !== 'GERAL') {
-            rankings = rankings.filter(r => r.categoria === filtroCategoriaRanking);
-        }
-
+        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).filter(r=>r.nome).sort((a,b)=>a.tempo-b.tempo);
         rankings.forEach((r, i) => {
-            corpo.innerHTML += `<tr>
-                <td>${i+1}º</td>
-                <td>${r.peito}</td>
-                <td>${r.nome}</td>
-                <td>${r.categoria || '-'}</td>
-                <td>${formatarTempo(r.tempo)}</td>
-            </tr>`;
+            corpo.innerHTML += `<tr><td>${i+1}º</td><td>${r.peito}</td><td>${r.nome}</td><td>${formatarTempo(r.tempo)}</td></tr>`;
         });
     }
 
@@ -487,85 +375,6 @@
         const t = document.getElementById("logRapido");
         t.innerText = msg; t.style.display = "block";
         setTimeout(()=>t.style.display="none", 2500);
-    }
-
-    // ==========================================
-    // 7. EMISSÃO DE RELATÓRIOS PDF
-    // ==========================================
-    function gerarRelatorioPDF() {
-        if(tempos.length === 0) return alert("Nenhum tempo registrado para gerar relatório.");
-        
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFontSize(16);
-        doc.text(`Resultado Geral - ${config.nome}`, 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Data: ${formatarDataBR(config.data)} | Total de Concluintes: ${tempos.length}`, 14, 22);
-        
-        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)}))
-                               .filter(r => r.nome)
-                               .sort((a,b) => a.tempo - b.tempo);
-        
-        const body = rankings.map((r, i) => [i+1, r.peito, r.nome, r.categoria, formatarTempo(r.tempo)]);
-        
-        doc.autoTable({
-            startY: 28,
-            head: [['Pos', 'Peito', 'Nome', 'Categoria', 'Tempo']],
-            body: body,
-            headStyles: { fillColor: [44, 62, 80] }
-        });
-        
-        doc.save(`Resultado_Geral_${config.nome}.pdf`);
-    }
-
-    function gerarRelatorioCategoriaPDF() {
-        if(tempos.length === 0) return alert("Nenhum tempo registrado para gerar relatório.");
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        doc.setFontSize(16);
-        doc.text(`Resultado por Categorias - ${config.nome}`, 14, 15);
-        
-        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)}))
-                               .filter(r => r.nome)
-                               .sort((a,b) => a.tempo - b.tempo);
-        
-        const categoriasUnicas = [...new Set(rankings.map(r => r.categoria))].sort();
-        
-        doc.setFontSize(10);
-        doc.text(`Total de Concluintes (Geral): ${rankings.length}`, 14, 22);
-        
-        let finalY = 28;
-
-        categoriasUnicas.forEach(cat => {
-            const atletasDaCategoria = rankings.filter(r => r.categoria === cat);
-            const nomeCat = cat || "Sem Categoria";
-            
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.text(`${nomeCat} - Total: ${atletasDaCategoria.length} atleta(s)`, 14, finalY + 5);
-            
-            const body = atletasDaCategoria.map((r, i) => [i+1, r.peito, r.nome, formatarTempo(r.tempo)]);
-            
-            doc.autoTable({
-                startY: finalY + 8,
-                head: [['Pos', 'Peito', 'Nome', 'Tempo']],
-                body: body,
-                headStyles: { fillColor: [52, 152, 219] },
-                margin: { bottom: 15 }
-            });
-            
-            finalY = doc.lastAutoTable.finalY + 5; 
-            
-            if(finalY > 260) {
-                doc.addPage();
-                finalY = 15;
-            }
-        });
-        
-        doc.save(`Resultado_Categorias_${config.nome}.pdf`);
     }
 </script>
 </body>
