@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAGNETIC ESTÚDIO - Cronometragem Online</title>
 
+    <!-- Bibliotecas de PDF e QR Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+    <!-- FIREBASE (O coração da Nuvem) -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
@@ -45,6 +47,7 @@
 
 <body>
 
+<!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
     <h1 id="resNome">Aguardando dados da nuvem...</h1>
     <div style="font-size: 80px; margin: 20px 0;" id="iconeCorrida">⏳</div>
@@ -55,9 +58,9 @@
         <p>Colocação Geral: <strong id="resGeral">--</strong></p>
         <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
     </div>
-    <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px;">Página do Evento</button>
 </div>
 
+<!-- SISTEMA PRINCIPAL -->
 <div class="header" id="tituloEventoExibicao">MAGNETIC ESTÚDIO - CONECTANDO À NUVEM...</div>
 
 <div class="tabs" id="mainTabs">
@@ -69,6 +72,7 @@
 </div>
 
 <div class="container" id="mainContainer">
+    <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
             <h2>Configuração</h2>
@@ -80,6 +84,7 @@
         </div>
     </div>
 
+    <!-- CADASTRO -->
     <div id="cadastro" class="tab">
         <div class="card">
             <h2>Novo Atleta</h2>
@@ -92,6 +97,7 @@
         </div>
     </div>
 
+    <!-- LISTA ATLETAS -->
     <div id="dadosAtletas" class="tab">
         <div class="card">
             <h2>Atletas e Etiquetas</h2>
@@ -103,6 +109,7 @@
         </div>
     </div>
 
+    <!-- CRONÔMETRO -->
     <div id="controle" class="tab">
         <div class="card" style="text-align: center;">
             <div class="cronometro-container" id="cronometro">00:00:00.00</div>
@@ -115,6 +122,7 @@
         </div>
     </div>
 
+    <!-- RANKING -->
     <div id="telao" class="tab">
         <div class="card">
             <h2>Resultados Ao Vivo</h2>
