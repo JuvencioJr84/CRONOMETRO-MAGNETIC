@@ -42,6 +42,10 @@
         /* Estilo da tela de consulta via QR Code */
         #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; overflow-y:auto; }
         .loading { font-size: 20px; color: #666; margin-top: 50px; }
+        
+        /* Estilos da lista de categorias */
+        .categoria-item { display:flex; justify-content:space-between; align-items:center; background:#f1f2f6; padding:10px; border-radius:6px; margin-bottom:5px; border: 1px solid #dcdde1; font-weight: bold; }
+        .categoria-item span { cursor:pointer; color: var(--danger); font-size: 18px; font-weight: bold; padding: 0 10px; }
     </style>
 </head>
 
@@ -49,7 +53,6 @@
 
 <!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
-    <!-- CABEÇALHO ADICIONADO -->
     <div class="header" id="tituloEventoConsulta" style="border-radius: 8px; margin-bottom: 20px; font-size: 18px; padding: 15px;">CARREGANDO EVENTO...</div>
 
     <h1 id="resNome">Aguardando dados da nuvem...</h1>
@@ -62,7 +65,7 @@
         <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
     </div>
 
-    <!-- RODAPÉ ADICIONADO -->
+    <!-- RODAPÉ -->
     <div style="margin-top: 40px; font-size: 12px; color: #7f8c8d; font-weight: bold; letter-spacing: 1px;">
         PROGRAMA DESENVOLVIDO POR JUVENCIO JR
     </div>
@@ -83,12 +86,24 @@
     <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
-            <h2>Configuração</h2>
+            <h2>Configuração do Evento</h2>
+            <label style="font-weight: bold; color: var(--secondary);">Nome da Corrida:</label>
             <input id="nomeEvento" placeholder="Nome da Corrida">
-            <div class="btn-group">
-                <button class="action btn-success" onclick="salvarConfigEvento()">Atualizar na Nuvem</button>
+            
+            <hr style="border: 1px solid #eee; margin: 20px 0;">
+            
+            <label style="font-weight: bold; color: var(--secondary);">Categorias da Corrida:</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input id="novaCatInput" placeholder="Ex: 5KM - MASCULINO" style="margin:0; flex:1;">
+                <button class="action" style="background: var(--secondary);" onclick="addCategoriaUI()">+ ADD</button>
             </div>
-            <p style="color: green; font-size: 14px;">✓ Conectado ao Firebase Online</p>
+            
+            <div id="listaCategoriasTela" style="margin-top: 15px;"></div>
+
+            <div class="btn-group" style="margin-top: 30px;">
+                <button class="action btn-success" style="width: 100%;" onclick="salvarConfigEvento()">Salvar Evento e Categorias na Nuvem</button>
+            </div>
+            <p style="color: green; font-size: 14px; text-align: center; margin-top: 15px;">✓ Conectado ao Firebase Online</p>
         </div>
     </div>
 
@@ -99,8 +114,15 @@
             <input id="peito" type="number" placeholder="Nº Peito">
             <input id="nome" placeholder="Nome Completo">
             <input id="nasc" type="number" placeholder="Ano Nascimento">
-            <select id="genero"><option>Masculino</option><option>Feminino</option></select>
-            <input id="categoria" placeholder="Categoria (ex: 5KM)">
+            <select id="genero">
+                <option>Masculino</option>
+                <option>Feminino</option>
+            </select>
+            <!-- CATEGORIA AGORA É UM SELECT -->
+            <select id="categoria">
+                <option value="GERAL">GERAL (Padrão)</option>
+            </select>
+            
             <button class="action btn-success" onclick="salvarAtleta()">Salvar na Nuvem</button>
         </div>
     </div>
@@ -109,7 +131,10 @@
     <div id="dadosAtletas" class="tab">
         <div class="card">
             <h2>Atletas e Etiquetas</h2>
-            <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (A4 - 5x5cm)</button>
+            <div class="btn-group">
+                <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (A4 - 5x5cm)</button>
+                <button class="action" style="background-color: var(--accent);" onclick="gerarRelatorioKitsPDF()">GERAR LISTA DE KITS</button>
+            </div>
             <table style="margin-top:20px">
                 <thead><tr><th>Peito</th><th>Nome</th><th>Ações</th></tr></thead>
                 <tbody id="tabelaAtletas"></tbody>
@@ -170,7 +195,8 @@
     // Variáveis Globais
     let atletas = [];
     let tempos = [];
-    let config = { nome: "Magnetic Estúdio" };
+    // Estrutura atualizada para suportar múltiplas categorias
+    let config = { nome: "Magnetic Estúdio", categorias: ["GERAL"] }; 
     const ANO_ATUAL = new Date().getFullYear();
 
     let tempoInicio = null;
@@ -206,29 +232,80 @@
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Fica ouvindo as Configurações na nuvem (Adicionado lógica para tela de consulta)
+        // Fica ouvindo as Configurações na nuvem (Nome e Categorias)
         db.ref('config').on('value', snap => {
-            config = snap.val() || { nome: "Magnetic Estúdio" };
+            config = snap.val() || { nome: "Magnetic Estúdio", categorias: ["GERAL"] };
+            
+            // Garante que o array de categorias exista mesmo se o banco estiver vazio
+            if(!config.categorias) config.categorias = ["GERAL"]; 
+            
             if(!isConsultaMode) {
                 document.getElementById("tituloEventoExibicao").innerText = config.nome;
+                document.getElementById("nomeEvento").value = config.nome;
+                atualizarListaCategoriasUI();
             } else {
                 document.getElementById("tituloEventoConsulta").innerText = config.nome;
             }
         });
         
-        // Atalho Enter
+        // Atalho Enter para adicionar categoria
+        document.getElementById("novaCatInput").addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') addCategoriaUI();
+        });
+
+        // Atalho Enter para cronômetro
         document.addEventListener('keypress', (e) => {
             if(e.key === 'Enter' && document.activeElement.id === 'chegadaPeito') registrarChegada();
         });
     };
 
     // ==========================================
-    // 3. FUNÇÕES DE GRAVAÇÃO (ENVIAR PRA NUVEM)
+    // 3. FUNÇÕES DA TELA DE EVENTO E CADASTRO
     // ==========================================
+    
+    // Adiciona categoria visualmente antes de salvar na nuvem
+    function addCategoriaUI() {
+        const val = document.getElementById("novaCatInput").value.trim().toUpperCase();
+        if(val && !config.categorias.includes(val)) {
+            config.categorias.push(val);
+            document.getElementById("novaCatInput").value = "";
+            atualizarListaCategoriasUI();
+        }
+    }
+
+    // Remove categoria visualmente antes de salvar
+    function removerCategoriaUI(idx) {
+        config.categorias.splice(idx, 1);
+        if(config.categorias.length === 0) config.categorias.push("GERAL"); // Evita deixar vazio
+        atualizarListaCategoriasUI();
+    }
+
+    // Atualiza o painel de categorias no Evento e o Select no Cadastro
+    function atualizarListaCategoriasUI() {
+        const container = document.getElementById("listaCategoriasTela");
+        container.innerHTML = "";
+        
+        // Renderiza a lista na aba Configuração
+        config.categorias.forEach((cat, i) => {
+            container.innerHTML += `
+            <div class="categoria-item">
+                <div>${cat}</div>
+                <span title="Excluir Categoria" onclick="removerCategoriaUI(${i})">✖</span>
+            </div>`;
+        });
+
+        // Renderiza o Select na aba de Cadastro
+        const selectCat = document.getElementById("categoria");
+        selectCat.innerHTML = "";
+        config.categorias.forEach(cat => {
+            selectCat.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+    }
+
     function salvarConfigEvento() {
         config.nome = document.getElementById("nomeEvento").value || config.nome;
-        db.ref('config').set(config);
-        showToast("Salvo na nuvem!");
+        db.ref('config').set(config); // Salva o nome e o array de categorias
+        showToast("Configuração Salva na Nuvem!");
     }
 
     function salvarAtleta() {
@@ -238,14 +315,21 @@
         
         // Garante que não haja duplicidade localmente antes de subir
         atletas = atletas.filter(a => String(a.peito) !== String(p));
-        atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value.toUpperCase() });
+        atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value });
         
         db.ref('atletas').set(atletas); // Salva na Nuvem
+        
+        // Limpa apenas os inputs de texto, mantendo os selects na última escolha
         document.querySelectorAll('#cadastro input').forEach(i => i.value = "");
-        openTab('dadosAtletas');
+        
+        // Retorna o cursor para o campo Peito para emendar o próximo cadastro
+        document.getElementById("peito").focus(); 
         showToast("Atleta Salvo!");
     }
 
+    // ==========================================
+    // 4. RESTANTE DAS FUNÇÕES (INALTERADAS)
+    // ==========================================
     function excluirAtleta(p) {
         if(confirm("Deseja apagar este atleta da nuvem?")) {
             atletas = atletas.filter(a => String(a.peito) !== String(p));
@@ -263,7 +347,7 @@
         if(tempos.find(x => String(x.peito) === String(p))) return alert("Tempo já registrado!");
         
         tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
-        db.ref('tempos').set(tempos); // Salva na Nuvem imediatamente
+        db.ref('tempos').set(tempos);
         
         document.getElementById("chegadaPeito").value = "";
         showToast(`Peito ${p} registrado!`);
@@ -276,13 +360,9 @@
         }
     }
 
-    // ==========================================
-    // 4. LÓGICA DO QR CODE, PDF E EXIBIÇÃO ONLINE
-    // ==========================================
     function tentarExibirResultado() {
-        if (atletas.length === 0) return; // Aguarda o Firebase carregar
+        if (atletas.length === 0) return;
 
-        // Garante a comparação transformando ambos em texto (String)
         const atletaCadastrado = atletas.find(a => String(a.peito) === String(peitoConsulta));
 
         if(!atletaCadastrado) {
@@ -294,23 +374,20 @@
         const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))})).filter(r => r.nome).sort((a,b)=>a.tempo-b.tempo);
         const index = rGeral.findIndex(x => String(x.peito) === String(peitoConsulta));
 
-        // Mostra o card com as informações básicas
         document.getElementById("cardResultado").style.display = "block";
         document.getElementById("resPeito").innerText = atletaCadastrado.peito;
         document.getElementById("resIdade").innerText = ANO_ATUAL - parseInt(atletaCadastrado.nasc || ANO_ATUAL);
 
         if(index === -1) {
-            // Atleta está cadastrado, mas ainda não tem tempo registrado
             document.getElementById("resNome").innerText = "Olá, " + atletaCadastrado.nome + "!";
             document.getElementById("iconeCorrida").innerText = "🏃";
             document.getElementById("resTempo").innerText = "Em percurso...";
-            document.getElementById("resTempo").style.color = "#f39c12"; // Laranja
+            document.getElementById("resTempo").style.color = "#f39c12";
             document.getElementById("resGeral").innerText = "--";
             document.getElementById("resCatPos").innerText = "--";
             return;
         }
 
-        // Atleta finalizou a prova
         const atleta = rGeral[index];
         const rCat = rGeral.filter(x => x.categoria === atleta.categoria);
         const indexCat = rCat.findIndex(x => String(x.peito) === String(peitoConsulta));
@@ -325,15 +402,13 @@
 
     async function gerarEtiquetasPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ format: 'a4' }); // Página A4
+        const doc = new jsPDF({ format: 'a4' });
         
-        const qrSize = 50; // 50x50 mm (5cm)
-        const marginX = 20; // Margem lateral
-        const marginY = 20; // Margem topo
-        const cols = 3; // 3 colunas
-        const rows = 4; // 4 linhas (12 por página)
-        
-        // Calcula o espaçamento automático entre as colunas e linhas
+        const qrSize = 50; 
+        const marginX = 20; 
+        const marginY = 20; 
+        const cols = 3; 
+        const rows = 4; 
         const spaceX = (210 - (2 * marginX) - (cols * qrSize)) / (cols - 1 || 1); 
         const spaceY = 20; 
         
@@ -342,16 +417,13 @@
         for (let i = 0; i < atletas.length; i++) {
             const a = atletas[i];
             
-            // Adiciona nova página a cada 12 etiquetas
             if (i > 0 && currentItem >= cols * rows) {
                 doc.addPage();
                 currentItem = 0;
             }
 
-            // Calcula a posição (X e Y) na folha
             const colIndex = currentItem % cols;
             const rowIndex = Math.floor(currentItem / cols);
-            
             const x = marginX + (colIndex * (qrSize + spaceX));
             const y = marginY + (rowIndex * (qrSize + spaceY));
 
@@ -361,13 +433,10 @@
             document.getElementById("qrcodeHidden").innerHTML = "";
             new QRCode(document.getElementById("qrcodeHidden"), { text: linkConsulta, width: 200, height: 200 });
 
-            await new Promise(r => setTimeout(r, 100)); // Aguarda renderizar
+            await new Promise(r => setTimeout(r, 100));
             const qrImg = document.querySelector("#qrcodeHidden img").src;
 
-            // Desenha o QR Code
             doc.addImage(qrImg, 'PNG', x, y, qrSize, qrSize);
-            
-            // Texto embaixo do QR Code
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
             doc.text(`Nº ${a.peito}`, x + (qrSize/2), y + qrSize + 6, { align: "center" });
@@ -379,9 +448,37 @@
             
             currentItem++;
         }
-        
         doc.save("etiquetas_A4_5x5.pdf");
         showToast("PDF de Etiquetas Gerado!");
+    }
+
+    function gerarRelatorioKitsPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.text(`Lista de Entrega de Kits - ${config.nome}`, 14, 20);
+        
+        const atletasOrdenados = [...atletas].sort((a,b)=> Number(a.peito) - Number(b.peito));
+        const bodyData = atletasOrdenados.map((a) => [
+            a.peito,
+            a.nome,
+            a.genero || '-',
+            a.categoria || 'Geral',
+            '' 
+        ]);
+
+        doc.autoTable({
+            startY: 30,
+            head: [['Peito', 'Nome', 'Gênero', 'Categoria', 'Assinatura (Recebimento)']],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80] },
+            columnStyles: { 4: { cellWidth: 50 } },
+            styles: { minCellHeight: 12, valign: 'middle' }
+        });
+        doc.save("lista_entrega_kits.pdf");
+        showToast("Lista de Kits Baixada!");
     }
 
     function gerarRelatorioPDF() {
@@ -391,12 +488,10 @@
         doc.setFontSize(18);
         doc.text(`Resultado Geral - ${config.nome}`, 14, 20);
         
-        // Puxa e ordena os atletas
         const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))}))
                              .filter(r => r.nome)
                              .sort((a,b)=>a.tempo-b.tempo);
         
-        // Monta as linhas da tabela
         const bodyData = rGeral.map((r, i) => [
             `${i + 1}º`,
             r.peito,
@@ -405,7 +500,6 @@
             formatarTempo(r.tempo)
         ]);
 
-        // Gera a tabela no PDF
         doc.autoTable({
             startY: 30,
             head: [['Pos', 'Peito', 'Nome', 'Categoria', 'Tempo']],
@@ -413,14 +507,10 @@
             theme: 'grid',
             headStyles: { fillColor: [44, 62, 80] }
         });
-        
         doc.save("resultado_evento.pdf");
         showToast("Relatório Baixado!");
     }
 
-    // ==========================================
-    // 5. UTILITÁRIOS E INTERFACE
-    // ==========================================
     function openTab(id) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active-tab'));
@@ -432,7 +522,6 @@
     function atualizarTabelaAtletas() {
         const corpo = document.getElementById("tabelaAtletas");
         corpo.innerHTML = "";
-        // Garante que o peito seja tratado como número para ordenar corretamente
         atletas.sort((a,b)=> Number(a.peito) - Number(b.peito)).forEach(a => {
             corpo.innerHTML += `<tr><td>${a.peito}</td><td>${a.nome}</td><td><button class="action btn-danger" onclick="excluirAtleta('${a.peito}')">Excluir</button></td></tr>`;
         });
