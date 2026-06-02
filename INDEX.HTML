@@ -49,6 +49,9 @@
 
 <!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
+    <!-- CABEÇALHO ADICIONADO -->
+    <div class="header" id="tituloEventoConsulta" style="border-radius: 8px; margin-bottom: 20px; font-size: 18px; padding: 15px;">CARREGANDO EVENTO...</div>
+
     <h1 id="resNome">Aguardando dados da nuvem...</h1>
     <div style="font-size: 80px; margin: 20px 0;" id="iconeCorrida">⏳</div>
     <div class="card" id="cardResultado" style="display:none;">
@@ -57,6 +60,11 @@
         <p>Tempo Oficial: <strong id="resTempo" style="font-size: 24px; color: var(--success);">--</strong></p>
         <p>Colocação Geral: <strong id="resGeral">--</strong></p>
         <p>Colocação Categoria: <strong id="resCatPos">--</strong></p>
+    </div>
+
+    <!-- RODAPÉ ADICIONADO -->
+    <div style="margin-top: 40px; font-size: 12px; color: #7f8c8d; font-weight: bold; letter-spacing: 1px;">
+        PROGRAMA DESENVOLVIDO POR JUVENCIO JR
     </div>
 </div>
 
@@ -198,10 +206,14 @@
             if(isConsultaMode) tentarExibirResultado();
         });
 
-        // Fica ouvindo as Configurações na nuvem
+        // Fica ouvindo as Configurações na nuvem (Adicionado lógica para tela de consulta)
         db.ref('config').on('value', snap => {
             config = snap.val() || { nome: "Magnetic Estúdio" };
-            if(!isConsultaMode) document.getElementById("tituloEventoExibicao").innerText = config.nome;
+            if(!isConsultaMode) {
+                document.getElementById("tituloEventoExibicao").innerText = config.nome;
+            } else {
+                document.getElementById("tituloEventoConsulta").innerText = config.nome;
+            }
         });
         
         // Atalho Enter
