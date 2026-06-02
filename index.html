@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAGNETIC ESTÚDIO - Cronometragem Online</title>
 
-    <!-- Bibliotecas de PDF e QR Code -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- FIREBASE (O coração da Nuvem) -->
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
 
@@ -21,7 +19,7 @@
         }
         body { font-family: 'Segoe UI', sans-serif; margin:0; background: var(--light); }
         .header { text-align:center; padding:20px; background: var(--primary); color:white; font-weight:bold; }
-        .tabs { display:flex; background: var(--secondary); overflow-x: auto; sticky: top; position: sticky; top: 0; z-index: 100; }
+        .tabs { display:flex; background: var(--secondary); overflow-x: auto; position: sticky; top: 0; z-index: 100; }
         .tabs button { flex:1; padding:15px; color:white; background:none; border:none; cursor:pointer; font-weight:bold; white-space: nowrap; }
         .tabs button.active-tab { border-bottom: 3px solid var(--accent); background: var(--primary); }
         .tab { display:none; padding:20px; }
@@ -40,14 +38,13 @@
         #logRapido { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 50px; display: none; }
         
         /* Estilo da tela de consulta via QR Code */
-        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; }
+        #consultaAtleta { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; padding:40px; box-sizing:border-box; text-align:center; overflow-y:auto; }
         .loading { font-size: 20px; color: #666; margin-top: 50px; }
     </style>
 </head>
 
 <body>
 
-<!-- TELA DE RESULTADO ONLINE (QR CODE) -->
 <div id="consultaAtleta">
     <h1 id="resNome">Aguardando dados da nuvem...</h1>
     <div style="font-size: 80px; margin: 20px 0;" id="iconeCorrida">⏳</div>
@@ -61,7 +58,6 @@
     <button class="action" onclick="window.location.href = window.location.pathname" style="margin-top: 20px;">Página do Evento</button>
 </div>
 
-<!-- SISTEMA PRINCIPAL -->
 <div class="header" id="tituloEventoExibicao">MAGNETIC ESTÚDIO - CONECTANDO À NUVEM...</div>
 
 <div class="tabs" id="mainTabs">
@@ -73,7 +69,6 @@
 </div>
 
 <div class="container" id="mainContainer">
-    <!-- EVENTO -->
     <div id="evento" class="tab active">
         <div class="card">
             <h2>Configuração</h2>
@@ -85,7 +80,6 @@
         </div>
     </div>
 
-    <!-- CADASTRO -->
     <div id="cadastro" class="tab">
         <div class="card">
             <h2>Novo Atleta</h2>
@@ -98,11 +92,10 @@
         </div>
     </div>
 
-    <!-- LISTA ATLETAS -->
     <div id="dadosAtletas" class="tab">
         <div class="card">
             <h2>Atletas e Etiquetas</h2>
-            <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (3x3cm)</button>
+            <button class="action btn-success" onclick="gerarEtiquetasPDF()">GERAR ETIQUETAS QR CODE (A4 - 5x5cm)</button>
             <table style="margin-top:20px">
                 <thead><tr><th>Peito</th><th>Nome</th><th>Ações</th></tr></thead>
                 <tbody id="tabelaAtletas"></tbody>
@@ -110,7 +103,6 @@
         </div>
     </div>
 
-    <!-- CRONÔMETRO -->
     <div id="controle" class="tab">
         <div class="card" style="text-align: center;">
             <div class="cronometro-container" id="cronometro">00:00:00.00</div>
@@ -123,7 +115,6 @@
         </div>
     </div>
 
-    <!-- RANKING -->
     <div id="telao" class="tab">
         <div class="card">
             <h2>Resultados Ao Vivo</h2>
@@ -144,18 +135,17 @@
 
 <script>
     // ==========================================
-    // 1. COLE AQUI O SEU FIREBASE CONFIG
+    // 1. FIREBASE CONFIG
     // ==========================================
-   const firebaseConfig = {
-  apiKey: "AIzaSyDrp7qLQwaig65fYQJXWXmfomJ_YcZHWIM",
-  authDomain: "corrida-paz.firebaseapp.com",
-  projectId: "corrida-paz",
-  storageBucket: "corrida-paz.firebasestorage.app",
-  messagingSenderId: "531285595198",
-  appId: "1:531285595198:web:c2ef7e918ecbc861c82d6f",
-  measurementId: "G-KZ1QMKYELH"
-};
-
+    const firebaseConfig = {
+        apiKey: "AIzaSyDrp7qLQwaig65fYQJXWXmfomJ_YcZHWIM",
+        authDomain: "corrida-paz.firebaseapp.com",
+        projectId: "corrida-paz",
+        storageBucket: "corrida-paz.firebasestorage.app",
+        messagingSenderId: "531285595198",
+        appId: "1:531285595198:web:c2ef7e918ecbc861c82d6f",
+        measurementId: "G-KZ1QMKYELH"
+    };
 
     // Inicializa o Firebase
     firebase.initializeApp(firebaseConfig);
@@ -226,7 +216,8 @@
         const n = document.getElementById("nome").value;
         if(!p || !n) return alert("Peito e Nome obrigatórios!");
         
-        atletas = atletas.filter(a => a.peito !== p);
+        // Garante que não haja duplicidade localmente antes de subir
+        atletas = atletas.filter(a => String(a.peito) !== String(p));
         atletas.push({ peito: p, nome: n, nasc: document.getElementById("nasc").value, genero: document.getElementById("genero").value, categoria: document.getElementById("categoria").value.toUpperCase() });
         
         db.ref('atletas').set(atletas); // Salva na Nuvem
@@ -237,8 +228,8 @@
 
     function excluirAtleta(p) {
         if(confirm("Deseja apagar este atleta da nuvem?")) {
-            atletas = atletas.filter(a => a.peito !== p);
-            tempos = tempos.filter(t => t.peito !== p);
+            atletas = atletas.filter(a => String(a.peito) !== String(p));
+            tempos = tempos.filter(t => String(t.peito) !== String(p));
             db.ref('atletas').set(atletas);
             db.ref('tempos').set(tempos);
             showToast("Atleta Excluído!");
@@ -248,8 +239,8 @@
     function registrarChegada() {
         const p = document.getElementById("chegadaPeito").value;
         if(!rodando) return alert("Inicie o cronômetro!");
-        if(!atletas.find(x=>x.peito===p)) return alert("Atleta não cadastrado!");
-        if(tempos.find(x=>x.peito===p)) return alert("Tempo já registrado!");
+        if(!atletas.find(x => String(x.peito) === String(p))) return alert("Atleta não cadastrado!");
+        if(tempos.find(x => String(x.peito) === String(p))) return alert("Tempo já registrado!");
         
         tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
         db.ref('tempos').set(tempos); // Salva na Nuvem imediatamente
@@ -266,56 +257,145 @@
     }
 
     // ==========================================
-    // 4. LÓGICA DO QR CODE E EXIBIÇÃO ONLINE
+    // 4. LÓGICA DO QR CODE, PDF E EXIBIÇÃO ONLINE
     // ==========================================
     function tentarExibirResultado() {
-        const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).sort((a,b)=>a.tempo-b.tempo);
-        const index = rGeral.findIndex(x => x.peito === peitoConsulta);
-        const atleta = rGeral[index];
+        if (atletas.length === 0) return; // Aguarda o Firebase carregar
 
-        if(!atleta) {
-            document.getElementById("resNome").innerText = "Resultado Oficial em breve...";
-            document.getElementById("iconeCorrida").innerText = "🏃";
+        // Garante a comparação transformando ambos em texto (String)
+        const atletaCadastrado = atletas.find(a => String(a.peito) === String(peitoConsulta));
+
+        if(!atletaCadastrado) {
+            document.getElementById("resNome").innerText = "Atleta não encontrado no sistema.";
+            document.getElementById("iconeCorrida").innerText = "❌";
             return;
         }
 
+        const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))})).filter(r => r.nome).sort((a,b)=>a.tempo-b.tempo);
+        const index = rGeral.findIndex(x => String(x.peito) === String(peitoConsulta));
+
+        // Mostra o card com as informações básicas
+        document.getElementById("cardResultado").style.display = "block";
+        document.getElementById("resPeito").innerText = atletaCadastrado.peito;
+        document.getElementById("resIdade").innerText = ANO_ATUAL - parseInt(atletaCadastrado.nasc || ANO_ATUAL);
+
+        if(index === -1) {
+            // Atleta está cadastrado, mas ainda não tem tempo registrado
+            document.getElementById("resNome").innerText = "Olá, " + atletaCadastrado.nome + "!";
+            document.getElementById("iconeCorrida").innerText = "🏃";
+            document.getElementById("resTempo").innerText = "Em percurso...";
+            document.getElementById("resTempo").style.color = "#f39c12"; // Laranja
+            document.getElementById("resGeral").innerText = "--";
+            document.getElementById("resCatPos").innerText = "--";
+            return;
+        }
+
+        // Atleta finalizou a prova
+        const atleta = rGeral[index];
         const rCat = rGeral.filter(x => x.categoria === atleta.categoria);
-        const indexCat = rCat.findIndex(x => x.peito === peitoConsulta);
+        const indexCat = rCat.findIndex(x => String(x.peito) === String(peitoConsulta));
 
         document.getElementById("resNome").innerText = "Parabéns, " + atleta.nome + "!";
         document.getElementById("iconeCorrida").innerText = "🏅";
-        document.getElementById("cardResultado").style.display = "block";
-        
-        document.getElementById("resPeito").innerText = atleta.peito;
-        document.getElementById("resIdade").innerText = ANO_ATUAL - parseInt(atleta.nasc);
         document.getElementById("resTempo").innerText = formatarTempo(atleta.tempo);
+        document.getElementById("resTempo").style.color = "var(--success)";
         document.getElementById("resGeral").innerText = `${index + 1}º Lugar`;
-        document.getElementById("resCatPos").innerText = `${indexCat + 1}º Lugar (${atleta.categoria})`;
+        document.getElementById("resCatPos").innerText = `${indexCat + 1}º Lugar (${atleta.categoria || 'Geral'})`;
     }
 
     async function gerarEtiquetasPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ unit: 'mm', format: [30, 30] });
+        const doc = new jsPDF({ format: 'a4' }); // Página A4
+        
+        const qrSize = 50; // 50x50 mm (5cm)
+        const marginX = 20; // Margem lateral
+        const marginY = 20; // Margem topo
+        const cols = 3; // 3 colunas
+        const rows = 4; // 4 linhas (12 por página)
+        
+        // Calcula o espaçamento automático entre as colunas e linhas
+        const spaceX = (210 - (2 * marginX) - (cols * qrSize)) / (cols - 1 || 1); 
+        const spaceY = 20; 
+        
+        let currentItem = 0;
 
         for (let i = 0; i < atletas.length; i++) {
             const a = atletas[i];
-            if (i > 0) doc.addPage([30, 30]);
+            
+            // Adiciona nova página a cada 12 etiquetas
+            if (i > 0 && currentItem >= cols * rows) {
+                doc.addPage();
+                currentItem = 0;
+            }
 
-            // Link do seu GitHub
+            // Calcula a posição (X e Y) na folha
+            const colIndex = currentItem % cols;
+            const rowIndex = Math.floor(currentItem / cols);
+            
+            const x = marginX + (colIndex * (qrSize + spaceX));
+            const y = marginY + (rowIndex * (qrSize + spaceY));
+
             const urlBase = window.location.href.split('?')[0];
             const linkConsulta = `${urlBase}?p=${a.peito}`;
 
             document.getElementById("qrcodeHidden").innerHTML = "";
-            new QRCode(document.getElementById("qrcodeHidden"), { text: linkConsulta, width: 100, height: 100 });
+            new QRCode(document.getElementById("qrcodeHidden"), { text: linkConsulta, width: 200, height: 200 });
 
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 100)); // Aguarda renderizar
             const qrImg = document.querySelector("#qrcodeHidden img").src;
 
-            doc.addImage(qrImg, 'PNG', 5, 2, 20, 20);
+            // Desenha o QR Code
+            doc.addImage(qrImg, 'PNG', x, y, qrSize, qrSize);
+            
+            // Texto embaixo do QR Code
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text(`Nº ${a.peito}`, x + (qrSize/2), y + qrSize + 6, { align: "center" });
+            
             doc.setFontSize(10);
-            doc.text(`${a.peito}`, 15, 26, { align: "center" });
+            doc.setFont("helvetica", "normal");
+            const nomeCurto = a.nome.length > 20 ? a.nome.substring(0, 18) + "..." : a.nome;
+            doc.text(nomeCurto, x + (qrSize/2), y + qrSize + 11, { align: "center" });
+            
+            currentItem++;
         }
-        doc.save("etiquetas_3x3.pdf");
+        
+        doc.save("etiquetas_A4_5x5.pdf");
+        showToast("PDF de Etiquetas Gerado!");
+    }
+
+    function gerarRelatorioPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.text(`Resultado Geral - ${config.nome}`, 14, 20);
+        
+        // Puxa e ordena os atletas
+        const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))}))
+                             .filter(r => r.nome)
+                             .sort((a,b)=>a.tempo-b.tempo);
+        
+        // Monta as linhas da tabela
+        const bodyData = rGeral.map((r, i) => [
+            `${i + 1}º`,
+            r.peito,
+            r.nome,
+            r.categoria || 'Geral',
+            formatarTempo(r.tempo)
+        ]);
+
+        // Gera a tabela no PDF
+        doc.autoTable({
+            startY: 30,
+            head: [['Pos', 'Peito', 'Nome', 'Categoria', 'Tempo']],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80] }
+        });
+        
+        doc.save("resultado_evento.pdf");
+        showToast("Relatório Baixado!");
     }
 
     // ==========================================
@@ -332,7 +412,8 @@
     function atualizarTabelaAtletas() {
         const corpo = document.getElementById("tabelaAtletas");
         corpo.innerHTML = "";
-        atletas.sort((a,b)=>a.peito-b.peito).forEach(a => {
+        // Garante que o peito seja tratado como número para ordenar corretamente
+        atletas.sort((a,b)=> Number(a.peito) - Number(b.peito)).forEach(a => {
             corpo.innerHTML += `<tr><td>${a.peito}</td><td>${a.nome}</td><td><button class="action btn-danger" onclick="excluirAtleta('${a.peito}')">Excluir</button></td></tr>`;
         });
     }
@@ -340,7 +421,7 @@
     function atualizarRanking() {
         const corpo = document.getElementById("rankingCorpo");
         corpo.innerHTML = "";
-        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>x.peito===t.peito)})).filter(r=>r.nome).sort((a,b)=>a.tempo-b.tempo);
+        const rankings = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))})).filter(r=>r.nome).sort((a,b)=>a.tempo-b.tempo);
         rankings.forEach((r, i) => {
             corpo.innerHTML += `<tr><td>${i+1}º</td><td>${r.peito}</td><td>${r.nome}</td><td>${formatarTempo(r.tempo)}</td></tr>`;
         });
