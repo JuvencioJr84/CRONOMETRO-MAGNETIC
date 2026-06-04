@@ -37,7 +37,7 @@
         table { width:100%; border-collapse: collapse; background:white; }
         th, td { border:1px solid #eee; padding:12px; text-align:center; }
         th { background: var(--primary); color:white; }
-        .cronometro-container { background: #222; color: #00ff00; padding: 30px; border-radius: 15px; text-align: center; font-size: 60px; font-family: monospace; }
+        .cronometro-container { background: #111; color: #00ff00; padding: 40px; border-radius: 15px; text-align: center; font-size: 80px; font-family: 'Courier New', Courier, monospace; font-weight: bold; box-shadow: inset 0 0 20px rgba(0,255,0,0.1); border: 4px solid #333; }
         #logRapido { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 50px; display: none; z-index: 9999; }
         
         /* Estilo da tela de consulta via QR Code */
@@ -63,7 +63,6 @@
         <p>Idade: <strong id="resIdade">--</strong></p>
         <p>Tempo Oficial: <strong id="resTempo" style="font-size: 24px; color: var(--success);">--</strong></p>
         <p>Colocação Geral: <strong id="resGeral">--</strong></p>
-        <!-- TEXTO ATUALIZADO PARA REFLETIR CATEGORIA E GÊNERO -->
         <p>Colocação Categoria/Gênero: <strong id="resCatPos">--</strong></p>
     </div>
 
@@ -106,6 +105,16 @@
                 <button class="action btn-success" style="width: 100%;" onclick="salvarConfigEvento()">Salvar Evento e Categorias na Nuvem</button>
             </div>
             <p style="color: green; font-size: 14px; text-align: center; margin-top: 15px;">✓ Conectado ao Firebase Online</p>
+        </div>
+
+        <div class="card">
+            <h2>Backup Local</h2>
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Exporte os dados para o seu computador por segurança, ou importe um backup anterior para restaurar o sistema.</p>
+            <div class="btn-group">
+                <button class="action" style="background-color: var(--secondary);" onclick="exportarDadosLocais()">⬇ Exportar Backup</button>
+                <button class="action btn-warning" onclick="document.getElementById('fileImport').click()">⬆ Importar Backup</button>
+                <input type="file" id="fileImport" style="display:none" accept=".json" onchange="importarDadosLocais(event)">
+            </div>
         </div>
     </div>
 
@@ -151,16 +160,28 @@
         </div>
     </div>
 
-    <!-- CRONÔMETRO -->
+    <!-- TERMINAL DE CRONOMETRAGEM -->
     <div id="controle" class="tab">
-        <div class="card" style="text-align: center;">
+        <div class="card" style="text-align: center; border: 2px solid var(--primary); padding: 30px;">
+            <h2 style="margin-top: 0; color: var(--primary);">TERMINAL DE CRONOMETRAGEM</h2>
+            
             <div class="cronometro-container" id="cronometro">00:00:00.00</div>
-            <div class="btn-group" style="justify-content: center; margin-top:20px">
-                <button id="btnStart" class="action btn-success" onclick="iniciarCronometro()">INICIAR</button>
-                <button class="action btn-danger" onclick="resetarCronometro()">RESET</button>
+            
+            <div class="btn-group" style="justify-content: center; margin-top:25px; gap: 15px;">
+                <button id="btnStart" class="action btn-success" style="font-size: 18px; padding: 15px 30px;" onclick="iniciarCronometro()">▶ INICIAR CORRIDA</button>
+                <button class="action btn-danger" style="font-size: 18px; padding: 15px 30px;" onclick="resetarCronometro()">⏹ RESETAR</button>
             </div>
-            <input id="chegadaPeito" type="number" placeholder="Nº Peito" style="font-size:30px; text-align:center; margin-top:30px">
-            <button class="action btn-success" style="width:100%" onclick="registrarChegada()">REGISTRAR CHEGADA</button>
+            
+            <hr style="border: 1px dashed #ccc; margin: 30px 0;">
+            
+            <h3 style="color: var(--secondary);">Lançamento de Chegada</h3>
+            <input id="chegadaPeito" type="number" placeholder="Digite o Nº do Peito" style="font-size:40px; text-align:center; height: 80px; font-weight: bold; background: #fdfdfd;">
+            <button class="action btn-success" style="width:100%; font-size: 20px; padding: 20px;" onclick="registrarChegada()">✔ REGISTRAR CHEGADA (ENTER)</button>
+
+            <hr style="border: 1px dashed #ccc; margin: 30px 0;">
+
+            <!-- BOTÃO DE FINALIZAR CORRIDA E GERAR PDF MESTRE -->
+            <button class="action btn-warning" style="width:100%; font-size: 22px; padding: 20px; border: 2px solid #d35400;" onclick="finalizarCorrida()">🏆 FINALIZAR CORRIDA E GERAR RELATÓRIO MASTER</button>
         </div>
     </div>
 
@@ -169,7 +190,6 @@
         <div class="card">
             <h2>Resultados Ao Vivo</h2>
             
-            <!-- NOVOS FILTROS -->
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <select id="filtroGeneroRanking" onchange="atualizarRanking()" style="margin: 0; flex: 1;">
                     <option value="TODOS">Todos os Gêneros</option>
@@ -178,14 +198,14 @@
                 </select>
                 <select id="filtroCategoriaRanking" onchange="atualizarRanking()" style="margin: 0; flex: 1;">
                     <option value="TODOS">Todas as Categorias</option>
-                    <!-- Preenchido automaticamente via JS -->
                 </select>
             </div>
 
             <div class="btn-group">
                 <button class="action btn-success" onclick="gerarRelatorioPDF()">Baixar Ranking Geral (PDF)</button>
                 <button class="action" style="background-color: var(--secondary);" onclick="gerarRelatorioCategoriasPDF()">Baixar Ranking por Categorias (PDF)</button>
-                <button class="action btn-danger" onclick="limparTudo()">APAGAR NUVEM (ZERAR)</button>
+                <!-- NOVO BOTÃO LIMPAR TEMPOS -->
+                <button class="action btn-danger" onclick="limparTempos()">LIMPAR TEMPOS</button>
             </div>
             <table style="margin-top: 15px;">
                 <thead><tr><th>Pos</th><th>Peito</th><th>Nome</th><th>Tempo</th></tr></thead>
@@ -223,6 +243,8 @@
     const ANO_ATUAL = new Date().getFullYear();
 
     let tempoInicio = null;
+    let dataHoraInicio = null; // Armazena a hora exata da largada
+    let dataHoraFim = null; // Armazena a hora exata da finalização
     let intervaloCronometro = null;
     let rodando = false;
     let peitoConsulta = null;
@@ -338,6 +360,58 @@
         showToast("Configuração Salva na Nuvem!");
     }
 
+    function exportarDadosLocais() {
+        const backup = {
+            config: config,
+            atletas: atletas,
+            tempos: tempos
+        };
+        
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        
+        const dataAtual = new Date().toISOString().split('T')[0];
+        const nomeFormatado = config.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+        const nomeArquivo = `backup_${nomeFormatado}_${dataAtual}.json`;
+        
+        downloadAnchorNode.setAttribute("download", nomeArquivo);
+        document.body.appendChild(downloadAnchorNode); 
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        showToast("Backup exportado com sucesso!");
+    }
+
+    function importarDadosLocais(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const backup = JSON.parse(e.target.result);
+                
+                if(confirm("ATENÇÃO: Importar este backup apagará os dados atuais na nuvem e os substituirá. Deseja continuar?")) {
+                    db.ref('/').set({
+                        config: backup.config || { nome: "Magnetic Estúdio", categorias: ["GERAL"] },
+                        atletas: backup.atletas || [],
+                        tempos: backup.tempos || []
+                    });
+                    
+                    showToast("Backup importado e enviado para a nuvem!");
+                    document.getElementById('fileImport').value = ""; 
+                } else {
+                    document.getElementById('fileImport').value = "";
+                }
+            } catch (error) {
+                alert("Erro ao ler o arquivo. Certifique-se de que é um arquivo JSON de backup válido.");
+                document.getElementById('fileImport').value = "";
+            }
+        };
+        reader.readAsText(file);
+    }
+
     function salvarAtleta() {
         const p = document.getElementById("peito").value;
         const n = document.getElementById("nome").value;
@@ -373,7 +447,154 @@
     }
 
     // ==========================================
-    // 4. RESTANTE DAS FUNÇÕES
+    // 4. LÓGICA DO TERMINAL (CRONÔMETRO) E RANKING
+    // ==========================================
+    function iniciarCronometro() {
+        if(rodando) return;
+        tempoInicio = Date.now();
+        dataHoraInicio = new Date(); // Grava a hora exata do início
+        dataHoraFim = null; // Limpa o fim se estiver reiniciando
+
+        intervaloCronometro = setInterval(() => {
+            document.getElementById("cronometro").innerText = formatarTempo((Date.now() - tempoInicio)/1000);
+        }, 30);
+        rodando = true;
+    }
+
+    function resetarCronometro() {
+        if(confirm("ATENÇÃO: Zerar o relógio? Isso não apagará os tempos salvos, apenas o relógio da tela.")) {
+            clearInterval(intervaloCronometro);
+            document.getElementById("cronometro").innerText = "00:00:00.00";
+            rodando = false;
+            dataHoraInicio = null;
+            dataHoraFim = null;
+        }
+    }
+
+    function registrarChegada() {
+        const p = document.getElementById("chegadaPeito").value;
+        if(!rodando) return alert("Inicie o cronômetro primeiro!");
+        if(!atletas.find(x => String(x.peito) === String(p))) return alert("Atleta não cadastrado!");
+        if(tempos.find(x => String(x.peito) === String(p))) return alert("Tempo já registrado para este atleta!");
+        
+        tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
+        db.ref('tempos').set(tempos);
+        
+        document.getElementById("chegadaPeito").value = "";
+        showToast(`Peito ${p} registrado com sucesso!`);
+    }
+
+    function finalizarCorrida() {
+        if(!rodando && !dataHoraInicio) {
+            return alert("A corrida ainda não foi iniciada.");
+        }
+
+        if(confirm("Deseja realmente FINALIZAR a corrida? O cronômetro será parado e o Relatório Master será gerado.")) {
+            if(rodando) {
+                clearInterval(intervaloCronometro);
+                rodando = false;
+                dataHoraFim = new Date(); // Grava a hora exata da finalização
+            } else if (!dataHoraFim) {
+                dataHoraFim = new Date(); 
+            }
+            
+            gerarRelatorioMasterPDF();
+        }
+    }
+
+    // NOVA FUNÇÃO: LIMPAR TEMPOS
+    function limparTempos() {
+        if(confirm("ATENÇÃO: Deseja apagar TODOS os tempos registrados? Os atletas continuarão cadastrados e as configurações mantidas.")) {
+            db.ref('tempos').remove();
+            showToast("Todos os tempos foram apagados da nuvem.");
+        }
+    }
+
+    function gerarRelatorioMasterPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // 1. Cabeçalho Principal
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text(`RELATÓRIO MASTER - ${config.nome.toUpperCase()}`, 105, 20, { align: "center" });
+        
+        // 2. Quadro de Resumo de Tempos
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        
+        const hrInicioStr = dataHoraInicio ? dataHoraInicio.toLocaleTimeString('pt-BR') : "--:--:--";
+        const hrFimStr = dataHoraFim ? dataHoraFim.toLocaleTimeString('pt-BR') : "--:--:--";
+        
+        const totalSegundos = (dataHoraInicio && dataHoraFim) ? (dataHoraFim - dataHoraInicio)/1000 : 0;
+        const tempoTotalStr = totalSegundos > 0 ? formatarTempo(totalSegundos) : "--";
+
+        doc.setFillColor(245, 246, 250); // Fundo cinza claro
+        doc.rect(14, 25, 182, 15, 'F');
+        doc.text(`Horário de Largada: ${hrInicioStr}`, 20, 34);
+        doc.text(`Horário de Término: ${hrFimStr}`, 85, 34);
+        doc.text(`Duração Total: ${tempoTotalStr}`, 145, 34);
+        
+        let currentY = 50;
+
+        const rGeral = tempos.map(t => ({...t, ...atletas.find(x=>String(x.peito)===String(t.peito))}))
+                             .filter(r => r.nome)
+                             .sort((a,b)=>a.tempo-b.tempo);
+
+        // 3. Iteração gerando as tabelas por Categoria e Gênero
+        config.categorias.forEach(cat => {
+            ['Masculino', 'Feminino'].forEach(gen => {
+                const runners = rGeral.filter(r => r.categoria === cat && r.genero === gen);
+                
+                if(runners.length > 0) {
+                    if (currentY > 250) {
+                        doc.addPage();
+                        currentY = 20;
+                    }
+                    
+                    doc.setFontSize(14);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`🏆 CATEGORIA: ${cat} - ${gen.toUpperCase()}`, 14, currentY);
+                    currentY += 5;
+
+                    const bodyData = runners.map((r, i) => [
+                        `${i + 1}º`,
+                        r.peito,
+                        r.nome,
+                        formatarTempo(r.tempo)
+                    ]);
+
+                    doc.autoTable({
+                        startY: currentY,
+                        head: [['Pos', 'Nº Peito', 'Nome do Atleta', 'Tempo Oficial']],
+                        body: bodyData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [44, 62, 80] },
+                        margin: { bottom: 20 }
+                    });
+
+                    currentY = doc.lastAutoTable.finalY + 15;
+                }
+            });
+        });
+        
+        // Rodapé de Crédito no PDF
+        const pageCount = doc.internal.getNumberOfPages();
+        for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text("Sistema de Cronometragem desenvolvido por Juvencio Jr", 105, 290, { align: "center" });
+        }
+
+        const nomeArquivoFormatado = config.nome.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+        doc.save(`Relatorio_Master_${nomeArquivoFormatado}.pdf`);
+        showToast("Relatório Master Baixado com Sucesso!");
+    }
+
+
+    // ==========================================
+    // 5. FUNÇÕES AUXILIARES
     // ==========================================
     function excluirAtleta(p) {
         if(confirm("Deseja apagar este atleta da nuvem?")) {
@@ -382,26 +603,6 @@
             db.ref('atletas').set(atletas);
             db.ref('tempos').set(tempos);
             showToast("Atleta Excluído!");
-        }
-    }
-
-    function registrarChegada() {
-        const p = document.getElementById("chegadaPeito").value;
-        if(!rodando) return alert("Inicie o cronômetro!");
-        if(!atletas.find(x => String(x.peito) === String(p))) return alert("Atleta não cadastrado!");
-        if(tempos.find(x => String(x.peito) === String(p))) return alert("Tempo já registrado!");
-        
-        tempos.push({ peito: p, tempo: (Date.now() - tempoInicio)/1000 });
-        db.ref('tempos').set(tempos);
-        
-        document.getElementById("chegadaPeito").value = "";
-        showToast(`Peito ${p} registrado!`);
-    }
-
-    function limparTudo() {
-        if(confirm("APAGAR TUDO DA NUVEM? Isso não pode ser desfeito!")) {
-            db.ref('/').remove();
-            showToast("Banco de dados zerado.");
         }
     }
 
@@ -423,12 +624,10 @@
         document.getElementById("resPeito").innerText = atletaCadastrado.peito;
         document.getElementById("resIdade").innerText = ANO_ATUAL - parseInt(atletaCadastrado.nasc || ANO_ATUAL);
 
-        // LÓGICA DE CONTAGEM: CATEGORIA E GÊNERO COMBINADOS
         const catDoAtleta = atletaCadastrado.categoria || 'Geral';
         const genDoAtleta = atletaCadastrado.genero || 'Masculino';
         const totalInscritosGeral = atletas.length;
         
-        // Filtra os inscritos que possuem a mesma categoria E o mesmo gênero
         const totalInscritosCatGen = atletas.filter(a => (a.categoria || 'Geral') === catDoAtleta && (a.genero || 'Masculino') === genDoAtleta).length;
 
         if(index === -1) {
@@ -443,7 +642,6 @@
 
         const atleta = rGeral[index];
         
-        // Filtra a posição apenas entre os que cruzaram a linha na mesma categoria E gênero
         const rCatGen = rGeral.filter(x => x.categoria === atleta.categoria && x.genero === atleta.genero);
         const indexCatGen = rCatGen.findIndex(x => String(x.peito) === String(peitoConsulta));
 
@@ -452,7 +650,6 @@
         document.getElementById("resTempo").innerText = formatarTempo(atleta.tempo);
         document.getElementById("resTempo").style.color = "var(--success)";
         
-        // EXIBE AS POSIÇÕES ATUALIZADAS
         document.getElementById("resGeral").innerText = `${index + 1}º Lugar / ${totalInscritosGeral} Inscritos`;
         document.getElementById("resCatPos").innerText = `${indexCatGen + 1}º Lugar / ${totalInscritosCatGen} Inscritos (${catDoAtleta} - ${genDoAtleta})`;
     }
@@ -670,23 +867,6 @@
         rankings.forEach((r, i) => {
             corpo.innerHTML += `<tr><td>${i+1}º</td><td>${r.peito}</td><td>${r.nome}</td><td>${formatarTempo(r.tempo)}</td></tr>`;
         });
-    }
-
-    function iniciarCronometro() {
-        if(rodando) return;
-        tempoInicio = Date.now();
-        intervaloCronometro = setInterval(() => {
-            document.getElementById("cronometro").innerText = formatarTempo((Date.now() - tempoInicio)/1000);
-        }, 30);
-        rodando = true;
-    }
-
-    function resetarCronometro() {
-        if(confirm("Zerar relógio?")) {
-            clearInterval(intervaloCronometro);
-            document.getElementById("cronometro").innerText = "00:00:00.00";
-            rodando = false;
-        }
     }
 
     function formatarTempo(sTotal) {
